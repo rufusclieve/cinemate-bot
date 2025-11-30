@@ -1,0 +1,1439 @@
+// ============================================
+// 🎬 CINEMATE BOT - PART 1 OF 4
+// ============================================
+// INITIALIZATION & WELCOME MESSAGES
+// ============================================
+
+// Get user message
+userMessage = message.get("text");
+info "Raw: " + userMessage;
+
+// Extract button code (remove emoji descriptions after " - ")
+if(userMessage != null && userMessage.indexOf(" - ") != -1)
+{
+	userMessage = userMessage.substring(0,userMessage.indexOf(" - "));
+}
+
+// Normalize input to lowercase and trim whitespace
+if(userMessage != null)
+{
+	userMessage = userMessage.toLowerCase().trim();
+}
+else
+{
+	userMessage = "";
+}
+
+// ============================================
+// 1. AUTO-START / WELCOME MESSAGE
+// ============================================
+if(userMessage.equals("") || userMessage.equals("hi") || userMessage.equals("hello") || userMessage.equals("hey") || userMessage.equals("start") || userMessage.equals("help"))
+{
+	response = Map();
+	response.put("action","reply");
+	response.put("replies",{"🎬 Welcome to CineMate! 🍿\n\nYour personal entertainment assistant for:\n✨ Movies, Books, Events & Trivia\n\nChoose an option to get started:"});
+	response.put("suggestions",{"🎬 Movie Suggestions","📚 Book Suggestions","🎭 Event Discovery","🧠 Trivia Games"});
+	return response;
+}
+
+// ============================================
+// 2. MAIN MENU
+// ============================================
+if(userMessage.equals("0") || userMessage.equals("menu") || userMessage.equals("🏠 main menu"))
+{
+	response = Map();
+	response.put("action","reply");
+	response.put("replies",{"🏠 Main Menu\n\nWhat would you like to explore?"});
+	response.put("suggestions",{"🎬 Movie Suggestions","📚 Book Suggestions","🎭 Event Discovery","🧠 Trivia Games"});
+	return response;
+}
+
+// ============================================
+// 3. MOVIE SUGGESTIONS - Language Selection
+// ============================================
+if(userMessage.equals("1") || userMessage.equals("🎬 movie suggestions"))
+{
+	response = Map();
+	response.put("action","reply");
+	response.put("replies",{"🎬 Movie Recommendations\n\nFirst, choose your preferred language:"});
+	response.put("suggestions",{"🇮🇳 Tamil","🇮🇳 Hindi","🇮🇳 Telugu","🇮🇳 Malayalam","🇮🇳 Kannada","🌍 English"});
+	return response;
+}
+
+// ============================================
+// 3A. LANGUAGE SELECTION HANDLER
+// ============================================
+if(userMessage.equals("🇮🇳 tamil") || userMessage.equals("🇮🇳 hindi") || userMessage.equals("🇮🇳 telugu") || userMessage.equals("🇮🇳 malayalam") || userMessage.equals("🇮🇳 kannada") || userMessage.equals("🌍 english"))
+{
+	selectedLanguage = "";
+	langCode = "";
+	
+	// Map emoji selection to language
+	if(userMessage.equals("🇮🇳 tamil"))
+	{
+		selectedLanguage = "Tamil";
+		langCode = "TAM";
+	}
+	else if(userMessage.equals("🇮🇳 hindi"))
+	{
+		selectedLanguage = "Hindi";
+		langCode = "HIN";
+	}
+	else if(userMessage.equals("🇮🇳 telugu"))
+	{
+		selectedLanguage = "Telugu";
+		langCode = "TEL";
+	}
+	else if(userMessage.equals("🇮🇳 malayalam"))
+	{
+		selectedLanguage = "Malayalam";
+		langCode = "MAL";
+	}
+	else if(userMessage.equals("🇮🇳 kannada"))
+	{
+		selectedLanguage = "Kannada";
+		langCode = "KAN";
+	}
+	else
+	{
+		selectedLanguage = "English";
+		langCode = "ENG";
+	}
+	
+	response = Map();
+	response.put("action","reply");
+	response.put("replies",{"🎬 Great! " + selectedLanguage + " movies selected.\n\n👥 Who are you watching with?"});
+	response.put("suggestions",{langCode + "|👨‍👩‍👧‍👦 Family",langCode + "|💑 Partner",langCode + "|👥 Friends",langCode + "|🧘 Solo"});
+	return response;
+}
+
+// ============================================
+// 4. MOVIE SUGGESTIONS - Get AI Recommendations
+// ============================================
+
+// CRITICAL FIX: Check if this is an event button FIRST
+if(userMessage.startsWith("event_category_selection|") || userMessage.startsWith("event_domain_selection|"))
+{
+	// This is an event button - skip movie processing entirely
+	// Part 4 will handle it
+}
+else
+{
+	// Now check for movie-related buttons
+	hasLanguageCode = userMessage.indexOf("|") != -1;
+	
+	if(hasLanguageCode || userMessage.equals("👨‍👩‍👧‍👦 family") || userMessage.equals("💑 partner") || userMessage.equals("👥 friends") || userMessage.equals("🧘 solo"))
+	{
+		companionType = "";
+		currentLanguage = "Tamil";
+		langCode = "TAM";
+		
+		// Parse language code from button selection
+		if(hasLanguageCode)
+		{
+			pipePos = userMessage.indexOf("|");
+			langCode = userMessage.substring(0,pipePos).toUpperCase();
+			companionPart = userMessage.substring(pipePos + 1).toLowerCase();
+			
+			info "Extracted langCode: " + langCode;
+			
+			// Decode language
+			if(langCode.equals("TAM"))
+			{
+				currentLanguage = "Tamil";
+			}
+			else if(langCode.equals("HIN"))
+			{
+				currentLanguage = "Hindi";
+			}
+			else if(langCode.equals("TEL"))
+			{
+				currentLanguage = "Telugu";
+			}
+			else if(langCode.equals("MAL"))
+			{
+				currentLanguage = "Malayalam";
+			}
+			else if(langCode.equals("KAN"))
+			{
+				currentLanguage = "Kannada";
+			}
+			else if(langCode.equals("ENG"))
+			{
+				currentLanguage = "English";
+			}
+			
+			info "Decoded language: " + currentLanguage;
+			
+			// Decode companion type
+			if(companionPart.indexOf("family") != -1)
+			{
+				companionType = "family";
+			}
+			else if(companionPart.indexOf("partner") != -1)
+			{
+				companionType = "partner";
+			}
+			else if(companionPart.indexOf("friends") != -1)
+			{
+				companionType = "friends";
+			}
+			else if(companionPart.indexOf("solo") != -1)
+			{
+				companionType = "solo";
+			}
+		}
+		else
+		{
+			// Fallback if no language code
+			if(userMessage.indexOf("family") != -1)
+			{
+				companionType = "family";
+			}
+			else if(userMessage.indexOf("partner") != -1)
+			{
+				companionType = "partner";
+			}
+			else if(userMessage.indexOf("friends") != -1)
+			{
+				companionType = "friends";
+			}
+			else
+			{
+				companionType = "solo";
+			}
+		}
+		
+		info "Using Language: " + currentLanguage + " (" + langCode + ") for " + companionType;
+		
+		// ============================================
+		// GEMINI API CALL - Movie Recommendations
+		// ============================================
+		
+		// Create structured prompt for consistent formatting
+		prompt = "Suggest 3 " + currentLanguage + " movies perfect for watching with " + companionType + ". Format EXACTLY as shown:\nMOVIE1_TITLE: [title]\nMOVIE1_GENRE: [genre]\nMOVIE1_WHY: [brief reason]\nMOVIE1_RATING: [rating]\n\nMOVIE2_TITLE: [title]\nMOVIE2_GENRE: [genre]\nMOVIE2_WHY: [brief reason]\nMOVIE2_RATING: [rating]\n\nMOVIE3_TITLE: [title]\nMOVIE3_GENRE: [genre]\nMOVIE3_WHY: [brief reason]\nMOVIE3_RATING: [rating]";
+		
+		// Build JSON payload
+		jsonPayload = "{\"contents\":[{\"parts\":[{\"text\":\"" + prompt + "\"}]}],\"generationConfig\":{\"maxOutputTokens\":800}}";
+		
+		headers = Map();
+		headers.put("Content-Type","application/json");
+		
+		try 
+		{
+			// Call Gemini API using your connection
+			apiResponse = invokeurl
+			[
+				url :"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=AIzaSyBZFiRDhTUVwgB5GBxjWNCJ49_bnniz5tk"
+				type :POST
+				parameters:jsonPayload
+				headers:headers
+			];
+			
+			if(apiResponse != null && apiResponse.get("candidates") != null)
+			{
+				rawText = apiResponse.get("candidates").get(0).get("content").get("parts").get(0).get("text");
+				
+				// Format the response beautifully
+				formattedResponse = "🎬 *" + currentLanguage + " Movies for " + companionType + ":*\n\n";
+				
+				// Parse Movie 1
+				m1ts = rawText.indexOf("MOVIE1_TITLE:");
+				m1gs = rawText.indexOf("MOVIE1_GENRE:");
+				m1ws = rawText.indexOf("MOVIE1_WHY:");
+				m1rs = rawText.indexOf("MOVIE1_RATING:");
+				m2ts = rawText.indexOf("MOVIE2_TITLE:");
+				
+				if(m1ts != -1 && m1gs != -1)
+				{
+					m1t = rawText.substring(m1ts + 13,m1gs).trim();
+					m1g = rawText.substring(m1gs + 13,m1ws).trim();
+					m1w = rawText.substring(m1ws + 12,m1rs).trim();
+					m1r = rawText.substring(m1rs + 14,m2ts).trim();
+					formattedResponse = formattedResponse + "🎥 *1. " + m1t + "*\n📌 " + m1g + " | ⭐ " + m1r + "\n💡 " + m1w + "\n\n";
+				}
+				
+				// Parse Movie 2
+				m2gs = rawText.indexOf("MOVIE2_GENRE:");
+				m2ws = rawText.indexOf("MOVIE2_WHY:");
+				m2rs = rawText.indexOf("MOVIE2_RATING:");
+				m3ts = rawText.indexOf("MOVIE3_TITLE:");
+				
+				if(m2ts != -1 && m2gs != -1)
+				{
+					m2t = rawText.substring(m2ts + 13,m2gs).trim();
+					m2g = rawText.substring(m2gs + 13,m2ws).trim();
+					m2w = rawText.substring(m2ws + 12,m2rs).trim();
+					m2r = rawText.substring(m2rs + 14,m3ts).trim();
+					formattedResponse = formattedResponse + "🎥 *2. " + m2t + "*\n📌 " + m2g + " | ⭐ " + m2r + "\n💡 " + m2w + "\n\n";
+				}
+				
+				// Parse Movie 3
+				m3gs = rawText.indexOf("MOVIE3_GENRE:");
+				m3ws = rawText.indexOf("MOVIE3_WHY:");
+				m3rs = rawText.indexOf("MOVIE3_RATING:");
+				
+				if(m3ts != -1 && m3gs != -1)
+				{
+					m3t = rawText.substring(m3ts + 13,m3gs).trim();
+					m3g = rawText.substring(m3gs + 13,m3ws).trim();
+					m3w = rawText.substring(m3ws + 12,m3rs).trim();
+					m3r = rawText.substring(m3rs + 14).trim();
+					formattedResponse = formattedResponse + "🎥 *3. " + m3t + "*\n📌 " + m3g + " | ⭐ " + m3r + "\n💡 " + m3w + "\n\n";
+				}
+				
+				formattedResponse = formattedResponse + "🍿 *Enjoy your movie!*";
+				
+				response = Map();
+				response.put("action","reply");
+				response.put("replies",{formattedResponse});
+				response.put("suggestions",{"✅ Great!",langCode + "|" + companionType + "|🔄 More Movies",langCode + "|🎭 Different Genre","🏠 Main Menu"});
+				return response;
+			}
+		}
+		catch (e)
+		{
+			info "Error calling Gemini API: " + e;
+		}
+		
+		// Error fallback
+		response = Map();
+		response.put("action","reply");
+		response.put("replies",{"❌ Error fetching movies. Please try again!"});
+		response.put("suggestions",{langCode + "|" + companionType + "|🔄 Retry",langCode + "|🎭 Different Genre","🏠 Main Menu"});
+		return response;
+	}
+}
+
+// ============================================
+// END OF PART 1
+// ============================================
+
+
+// ============================================
+// 🎬 CINEMATE BOT - PART 2 OF 4
+// ============================================
+// MOVIE FEEDBACK & GENRE SELECTION
+// ============================================
+
+// ============================================
+// 4A. FEEDBACK - "More Movies" OR "Retry"
+// ============================================
+if(userMessage.indexOf("|🔄 more movies") != -1 || userMessage.indexOf("|🔄 retry") != -1 || userMessage.equals("🔄 more movies") || userMessage.equals("🔄 retry"))
+{
+	currentLanguage = "Tamil";
+	companionType = "family";
+	langCode = "TAM";
+	
+	// Parse language and companion type from button code
+	if(userMessage.indexOf("|") != -1)
+	{
+		firstPipe = userMessage.indexOf("|");
+		langCode = userMessage.substring(0,firstPipe).toUpperCase();
+		remainder = userMessage.substring(firstPipe + 1);
+		secondPipe = remainder.indexOf("|");
+		
+		if(secondPipe != -1)
+		{
+			companionType = remainder.substring(0,secondPipe);
+		}
+		
+		info "More Movies/Retry - Extracted langCode: " + langCode;
+		
+		// Decode language
+		if(langCode.equals("HIN"))
+		{
+			currentLanguage = "Hindi";
+		}
+		else if(langCode.equals("TEL"))
+		{
+			currentLanguage = "Telugu";
+		}
+		else if(langCode.equals("MAL"))
+		{
+			currentLanguage = "Malayalam";
+		}
+		else if(langCode.equals("KAN"))
+		{
+			currentLanguage = "Kannada";
+		}
+		else if(langCode.equals("ENG"))
+		{
+			currentLanguage = "English";
+		}
+		else
+		{
+			currentLanguage = "Tamil";
+			langCode = "TAM";
+		}
+		
+		info "More Movies/Retry - Language: " + currentLanguage + ", Companion: " + companionType;
+		
+		// Request DIFFERENT movies to avoid repetition
+		prompt = "Suggest 3 DIFFERENT " + currentLanguage + " movies for " + companionType + ". Do not repeat popular mainstream movies. Include hidden gems and lesser-known titles. Format:\nMOVIE1_TITLE: [title]\nMOVIE1_GENRE: [genre]\nMOVIE1_WHY: [brief reason]\nMOVIE1_RATING: [rating]\n\nMOVIE2_TITLE: [title]\nMOVIE2_GENRE: [genre]\nMOVIE2_WHY: [brief reason]\nMOVIE2_RATING: [rating]\n\nMOVIE3_TITLE: [title]\nMOVIE3_GENRE: [genre]\nMOVIE3_WHY: [brief reason]\nMOVIE3_RATING: [rating]";
+		
+		jsonPayload = "{\"contents\":[{\"parts\":[{\"text\":\"" + prompt + "\"}]}],\"generationConfig\":{\"maxOutputTokens\":800}}";
+		
+		headers = Map();
+		headers.put("Content-Type","application/json");
+		
+		try 
+		{
+			apiResponse = invokeurl
+			[
+				url :"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=AIzaSyBZFiRDhTUVwgB5GBxjWNCJ49_bnniz5tk"
+				type :POST
+				parameters:jsonPayload
+				headers:headers
+			];
+			
+			if(apiResponse != null && apiResponse.get("candidates") != null)
+			{
+				rawText = apiResponse.get("candidates").get(0).get("content").get("parts").get(0).get("text");
+				formattedResponse = "🎬 *More " + currentLanguage + " Movies for " + companionType + ":*\n\n";
+				
+				// Parse Movie 1
+				m1ts = rawText.indexOf("MOVIE1_TITLE:");
+				m1gs = rawText.indexOf("MOVIE1_GENRE:");
+				m1ws = rawText.indexOf("MOVIE1_WHY:");
+				m1rs = rawText.indexOf("MOVIE1_RATING:");
+				m2ts = rawText.indexOf("MOVIE2_TITLE:");
+				
+				if(m1ts != -1 && m1gs != -1)
+				{
+					m1t = rawText.substring(m1ts + 13,m1gs).trim();
+					m1g = rawText.substring(m1gs + 13,m1ws).trim();
+					m1w = rawText.substring(m1ws + 12,m1rs).trim();
+					m1r = rawText.substring(m1rs + 14,m2ts).trim();
+					formattedResponse = formattedResponse + "🎥 *1. " + m1t + "*\n📌 " + m1g + " | ⭐ " + m1r + "\n💡 " + m1w + "\n\n";
+				}
+				
+				// Parse Movie 2
+				m2gs = rawText.indexOf("MOVIE2_GENRE:");
+				m2ws = rawText.indexOf("MOVIE2_WHY:");
+				m2rs = rawText.indexOf("MOVIE2_RATING:");
+				m3ts = rawText.indexOf("MOVIE3_TITLE:");
+				
+				if(m2ts != -1 && m2gs != -1)
+				{
+					m2t = rawText.substring(m2ts + 13,m2gs).trim();
+					m2g = rawText.substring(m2gs + 13,m2ws).trim();
+					m2w = rawText.substring(m2ws + 12,m2rs).trim();
+					m2r = rawText.substring(m2rs + 14,m3ts).trim();
+					formattedResponse = formattedResponse + "🎥 *2. " + m2t + "*\n📌 " + m2g + " | ⭐ " + m2r + "\n💡 " + m2w + "\n\n";
+				}
+				
+				// Parse Movie 3
+				m3gs = rawText.indexOf("MOVIE3_GENRE:");
+				m3ws = rawText.indexOf("MOVIE3_WHY:");
+				m3rs = rawText.indexOf("MOVIE3_RATING:");
+				
+				if(m3ts != -1 && m3gs != -1)
+				{
+					m3t = rawText.substring(m3ts + 13,m3gs).trim();
+					m3g = rawText.substring(m3gs + 13,m3ws).trim();
+					m3w = rawText.substring(m3ws + 12,m3rs).trim();
+					m3r = rawText.substring(m3rs + 14).trim();
+					formattedResponse = formattedResponse + "🎥 *3. " + m3t + "*\n📌 " + m3g + " | ⭐ " + m3r + "\n💡 " + m3w + "\n\n";
+				}
+				
+				formattedResponse = formattedResponse + "🍿 *Enjoy!*";
+				
+				response = Map();
+				response.put("action","reply");
+				response.put("replies",{formattedResponse});
+				response.put("suggestions",{"✅ Great!",langCode + "|" + companionType + "|🔄 More Movies",langCode + "|🎭 Different Genre","🏠 Main Menu"});
+				return response;
+			}
+		}
+		catch (e)
+		{
+			info "Error: " + e;
+		}
+	}
+	
+	response = Map();
+	response.put("action","reply");
+	response.put("replies",{"❌ Error fetching movies. Try again!"});
+	response.put("suggestions",{langCode + "|" + companionType + "|🔄 Retry","🏠 Main Menu"});
+	return response;
+}
+
+// ============================================
+// 4B. FEEDBACK - "Different Genre"
+// ============================================
+if(userMessage.indexOf("|🎭 different genre") != -1 || userMessage.equals("🎭 different genre"))
+{
+	langCode = "TAM";
+	
+	if(userMessage.indexOf("|") != -1)
+	{
+		pipePos = userMessage.indexOf("|");
+		langCode = userMessage.substring(0,pipePos).toUpperCase();
+	}
+	
+	info "Different Genre - Extracted langCode: " + langCode;
+	
+	response = Map();
+	response.put("action","reply");
+	response.put("replies",{"🎭 Choose a genre you'd like to explore:"});
+	response.put("suggestions",{langCode + "|🎬 Action",langCode + "|😂 Comedy",langCode + "|❤️ Romance",langCode + "|😱 Thriller",langCode + "|🧠 Drama","🏠 Main Menu"});
+	return response;
+}
+
+// ============================================
+// 4C. GENRE-BASED MOVIE SUGGESTIONS
+// ============================================
+if(userMessage.indexOf("|🎬 action") != -1 || userMessage.indexOf("|😂 comedy") != -1 || userMessage.indexOf("|❤️ romance") != -1 || userMessage.indexOf("|😱 thriller") != -1 || userMessage.indexOf("|🧠 drama") != -1)
+{
+	pipePos = userMessage.indexOf("|");
+	langCode = userMessage.substring(0,pipePos).toUpperCase();
+	genrePart = userMessage.substring(pipePos + 1).toLowerCase();
+	
+	info "Genre Selection - Extracted langCode: " + langCode;
+	
+	genreType = "";
+	if(genrePart.indexOf("action") != -1)
+	{
+		genreType = "Action";
+	}
+	else if(genrePart.indexOf("comedy") != -1)
+	{
+		genreType = "Comedy";
+	}
+	else if(genrePart.indexOf("romance") != -1)
+	{
+		genreType = "Romance";
+	}
+	else if(genrePart.indexOf("thriller") != -1)
+	{
+		genreType = "Thriller";
+	}
+	else
+	{
+		genreType = "Drama";
+	}
+	
+	currentLanguage = "Tamil";
+	if(langCode.equals("HIN"))
+	{
+		currentLanguage = "Hindi";
+	}
+	else if(langCode.equals("TEL"))
+	{
+		currentLanguage = "Telugu";
+	}
+	else if(langCode.equals("MAL"))
+	{
+		currentLanguage = "Malayalam";
+	}
+	else if(langCode.equals("KAN"))
+	{
+		currentLanguage = "Kannada";
+	}
+	else if(langCode.equals("ENG"))
+	{
+		currentLanguage = "English";
+	}
+	
+	info "Genre - Language: " + currentLanguage + ", Genre: " + genreType;
+	
+	prompt = "Suggest 3 highly-rated " + currentLanguage + " " + genreType + " movies. Include both classics and recent releases. Format:\nMOVIE1_TITLE: [title]\nMOVIE1_GENRE: [genre]\nMOVIE1_WHY: [brief reason]\nMOVIE1_RATING: [rating]\n\nMOVIE2_TITLE: [title]\nMOVIE2_GENRE: [genre]\nMOVIE2_WHY: [brief reason]\nMOVIE2_RATING: [rating]\n\nMOVIE3_TITLE: [title]\nMOVIE3_GENRE: [genre]\nMOVIE3_WHY: [brief reason]\nMOVIE3_RATING: [rating]";
+	
+	jsonPayload = "{\"contents\":[{\"parts\":[{\"text\":\"" + prompt + "\"}]}],\"generationConfig\":{\"maxOutputTokens\":800}}";
+	
+	headers = Map();
+	headers.put("Content-Type","application/json");
+	
+	try 
+	{
+		apiResponse = invokeurl
+		[
+			url :"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=AIzaSyBZFiRDhTUVwgB5GBxjWNCJ49_bnniz5tk"
+			type :POST
+			parameters:jsonPayload
+			headers:headers
+		];
+		
+		if(apiResponse != null && apiResponse.get("candidates") != null)
+		{
+			rawText = apiResponse.get("candidates").get(0).get("content").get("parts").get(0).get("text");
+			formattedResponse = "🎬 *" + currentLanguage + " " + genreType + " Movies:*\n\n";
+			
+			// Parse Movie 1
+			m1ts = rawText.indexOf("MOVIE1_TITLE:");
+			m1gs = rawText.indexOf("MOVIE1_GENRE:");
+			m1ws = rawText.indexOf("MOVIE1_WHY:");
+			m1rs = rawText.indexOf("MOVIE1_RATING:");
+			m2ts = rawText.indexOf("MOVIE2_TITLE:");
+			
+			if(m1ts != -1 && m1gs != -1)
+			{
+				m1t = rawText.substring(m1ts + 13,m1gs).trim();
+				m1g = rawText.substring(m1gs + 13,m1ws).trim();
+				m1w = rawText.substring(m1ws + 12,m1rs).trim();
+				m1r = rawText.substring(m1rs + 14,m2ts).trim();
+				formattedResponse = formattedResponse + "🎥 *1. " + m1t + "*\n📌 " + m1g + " | ⭐ " + m1r + "\n💡 " + m1w + "\n\n";
+			}
+			
+			// Parse Movie 2
+			m2gs = rawText.indexOf("MOVIE2_GENRE:");
+			m2ws = rawText.indexOf("MOVIE2_WHY:");
+			m2rs = rawText.indexOf("MOVIE2_RATING:");
+			m3ts = rawText.indexOf("MOVIE3_TITLE:");
+			
+			if(m2ts != -1 && m2gs != -1)
+			{
+				m2t = rawText.substring(m2ts + 13,m2gs).trim();
+				m2g = rawText.substring(m2gs + 13,m2ws).trim();
+				m2w = rawText.substring(m2ws + 12,m2rs).trim();
+				m2r = rawText.substring(m2rs + 14,m3ts).trim();
+				formattedResponse = formattedResponse + "🎥 *2. " + m2t + "*\n📌 " + m2g + " | ⭐ " + m2r + "\n💡 " + m2w + "\n\n";
+			}
+			
+			// Parse Movie 3
+			m3gs = rawText.indexOf("MOVIE3_GENRE:");
+			m3ws = rawText.indexOf("MOVIE3_WHY:");
+			m3rs = rawText.indexOf("MOVIE3_RATING:");
+			
+			if(m3ts != -1 && m3gs != -1)
+			{
+				m3t = rawText.substring(m3ts + 13,m3gs).trim();
+				m3g = rawText.substring(m3gs + 13,m3ws).trim();
+				m3w = rawText.substring(m3ws + 12,m3rs).trim();
+				m3r = rawText.substring(m3rs + 14).trim();
+				formattedResponse = formattedResponse + "🎥 *3. " + m3t + "*\n📌 " + m3g + " | ⭐ " + m3r + "\n💡 " + m3w + "\n\n";
+			}
+			
+			formattedResponse = formattedResponse + "🍿 *Enjoy!*";
+			
+			response = Map();
+			response.put("action","reply");
+			response.put("replies",{formattedResponse});
+			response.put("suggestions",{"✅ Great!",langCode + "|genre|🔄 More Movies",langCode + "|🎭 Different Genre","🏠 Main Menu"});
+			return response;
+		}
+	}
+	catch (e)
+	{
+		info "Error: " + e;
+	}
+	
+	response = Map();
+	response.put("action","reply");
+	response.put("replies",{"❌ Error fetching movies. Try again!"});
+	response.put("suggestions",{langCode + "|" + genrePart + "|🔄 Retry",langCode + "|🎭 Different Genre","🏠 Main Menu"});
+	return response;
+}
+
+// ============================================
+// 4D. FEEDBACK - "Great!"
+// ============================================
+if(userMessage.equals("✅ great!"))
+{
+	response = Map();
+	response.put("action","reply");
+	response.put("replies",{"🎉 Awesome! Hope you enjoy the movie! 🍿\n\n✨ What else can I help you with?"});
+	response.put("suggestions",{"🎬 Movie Suggestions","📚 Book Suggestions","🎭 Event Discovery","🧠 Trivia Games","🏠 Main Menu"});
+	return response;
+}
+
+// ============================================
+// 📚 BOOKS MODULE - START
+// ============================================
+if(userMessage.equals("📚 book suggestions") || userMessage.equals("📚 books") || userMessage.equals("books"))
+{
+	response = Map();
+	response.put("action","reply");
+	response.put("replies",{"📚 *Book Recommendations*\n\n📖 Discover your next great read!\n\nHow would you like to explore?"});
+	response.put("suggestions",{"👶 Age-Based Suggestions","🔍 Search Specific Book","🏠 Main Menu"});
+	return response;
+}
+
+// Age-based book suggestions menu
+if(userMessage.equals("👶 age-based suggestions"))
+{
+	response = Map();
+	response.put("action","reply");
+	response.put("replies",{"📚 *Select Your Age Group:*\n\nWe'll recommend must-read books tailored to your age!"});
+	response.put("suggestions",{"👶 Kids (0-14 years)","💼 Adults (15-64 years)","🧓 Seniors (65+ years)","🏠 Main Menu"});
+	return response;
+}
+
+// ============================================
+// END OF PART 2
+// ============================================
+
+// ============================================
+// 🎬 CINEMATE BOT - PART 3 OF 4
+// ============================================
+// BOOKS MODULE & EVENT DISCOVERY & TRIVIA
+// ============================================
+
+// ============================================
+// 📚 AGE-BASED BOOK RECOMMENDATIONS
+// ============================================
+if(userMessage.equals("👶 kids (0-14 years)") || userMessage.equals("💼 adults (15-64 years)") || userMessage.equals("🧓 seniors (65+ years)"))
+{
+	ageGroup = "";
+	if(userMessage.indexOf("kids") != -1)
+	{
+		ageGroup = "Kids (0-14 years)";
+	}
+	else if(userMessage.indexOf("adults") != -1)
+	{
+		ageGroup = "Adults (15-64 years)";
+	}
+	else
+	{
+		ageGroup = "Seniors (65+ years)";
+	}
+	
+	prompt = "Suggest 5 must-read books for " + ageGroup + " in India. Include a diverse mix of Indian and international authors, various genres. Format EXACTLY:\nBOOK1_TITLE: [title]\nBOOK1_AUTHOR: [author]\nBOOK1_GENRE: [genre]\nBOOK1_WHY: [one line why it's great]\nBOOK1_RATING: [rating out of 5]\n\nBOOK2_TITLE: [title]\nBOOK2_AUTHOR: [author]\nBOOK2_GENRE: [genre]\nBOOK2_WHY: [one line why it's great]\nBOOK2_RATING: [rating out of 5]\n\nBOOK3_TITLE: [title]\nBOOK3_AUTHOR: [author]\nBOOK3_GENRE: [genre]\nBOOK3_WHY: [one line why it's great]\nBOOK3_RATING: [rating out of 5]\n\nBOOK4_TITLE: [title]\nBOOK4_AUTHOR: [author]\nBOOK4_GENRE: [genre]\nBOOK4_WHY: [one line why it's great]\nBOOK4_RATING: [rating out of 5]\n\nBOOK5_TITLE: [title]\nBOOK5_AUTHOR: [author]\nBOOK5_GENRE: [genre]\nBOOK5_WHY: [one line why it's great]\nBOOK5_RATING: [rating out of 5]";
+	
+	jsonPayload = "{\"contents\":[{\"parts\":[{\"text\":\"" + prompt + "\"}]}],\"generationConfig\":{\"maxOutputTokens\":1000}}";
+	
+	headers = Map();
+	headers.put("Content-Type","application/json");
+	
+	try 
+	{
+		apiResponse = invokeurl
+		[
+			url :"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=AIzaSyBZFiRDhTUVwgB5GBxjWNCJ49_bnniz5tk"
+			type :POST
+			parameters:jsonPayload
+			headers:headers
+		];
+		
+		if(apiResponse != null && apiResponse.get("candidates") != null)
+		{
+			rawText = apiResponse.get("candidates").get(0).get("content").get("parts").get(0).get("text");
+			formattedResponse = "📚 *Must-Read Books for " + ageGroup + ":*\n\n";
+			
+			// Parse Book 1
+			b1ts = rawText.indexOf("BOOK1_TITLE:");
+			b1as = rawText.indexOf("BOOK1_AUTHOR:");
+			b1gs = rawText.indexOf("BOOK1_GENRE:");
+			b1ws = rawText.indexOf("BOOK1_WHY:");
+			b1rs = rawText.indexOf("BOOK1_RATING:");
+			b2ts = rawText.indexOf("BOOK2_TITLE:");
+			
+			if(b1ts != -1 && b1as != -1)
+			{
+				b1t = rawText.substring(b1ts + 12,b1as).trim();
+				b1a = rawText.substring(b1as + 13,b1gs).trim();
+				b1g = rawText.substring(b1gs + 13,b1ws).trim();
+				b1w = rawText.substring(b1ws + 11,b1rs).trim();
+				b1r = rawText.substring(b1rs + 14,b2ts).trim();
+				formattedResponse = formattedResponse + "📖 *1. " + b1t + "*\n✍️ " + b1a + " | 📚 " + b1g + "\n⭐ " + b1r + "\n💡 " + b1w + "\n\n";
+			}
+			
+			// Parse Book 2
+			b2as = rawText.indexOf("BOOK2_AUTHOR:");
+			b2gs = rawText.indexOf("BOOK2_GENRE:");
+			b2ws = rawText.indexOf("BOOK2_WHY:");
+			b2rs = rawText.indexOf("BOOK2_RATING:");
+			b3ts = rawText.indexOf("BOOK3_TITLE:");
+			
+			if(b2ts != -1 && b2as != -1)
+			{
+				b2t = rawText.substring(b2ts + 12,b2as).trim();
+				b2a = rawText.substring(b2as + 13,b2gs).trim();
+				b2g = rawText.substring(b2gs + 13,b2ws).trim();
+				b2w = rawText.substring(b2ws + 11,b2rs).trim();
+				b2r = rawText.substring(b2rs + 14,b3ts).trim();
+				formattedResponse = formattedResponse + "📖 *2. " + b2t + "*\n✍️ " + b2a + " | 📚 " + b2g + "\n⭐ " + b2r + "\n💡 " + b2w + "\n\n";
+			}
+			
+			// Parse Book 3
+			b3as = rawText.indexOf("BOOK3_AUTHOR:");
+			b3gs = rawText.indexOf("BOOK3_GENRE:");
+			b3ws = rawText.indexOf("BOOK3_WHY:");
+			b3rs = rawText.indexOf("BOOK3_RATING:");
+			b4ts = rawText.indexOf("BOOK4_TITLE:");
+			
+			if(b3ts != -1 && b3as != -1)
+			{
+				b3t = rawText.substring(b3ts + 12,b3as).trim();
+				b3a = rawText.substring(b3as + 13,b3gs).trim();
+				b3g = rawText.substring(b3gs + 13,b3ws).trim();
+				b3w = rawText.substring(b3ws + 11,b3rs).trim();
+				b3r = rawText.substring(b3rs + 14,b4ts).trim();
+				formattedResponse = formattedResponse + "📖 *3. " + b3t + "*\n✍️ " + b3a + " | 📚 " + b3g + "\n⭐ " + b3r + "\n💡 " + b3w + "\n\n";
+			}
+			
+			// Parse Book 4
+			b4as = rawText.indexOf("BOOK4_AUTHOR:");
+			b4gs = rawText.indexOf("BOOK4_GENRE:");
+			b4ws = rawText.indexOf("BOOK4_WHY:");
+			b4rs = rawText.indexOf("BOOK4_RATING:");
+			b5ts = rawText.indexOf("BOOK5_TITLE:");
+			
+			if(b4ts != -1 && b4as != -1)
+			{
+				b4t = rawText.substring(b4ts + 12,b4as).trim();
+				b4a = rawText.substring(b4as + 13,b4gs).trim();
+				b4g = rawText.substring(b4gs + 13,b4ws).trim();
+				b4w = rawText.substring(b4ws + 11,b4rs).trim();
+				b4r = rawText.substring(b4rs + 14,b5ts).trim();
+				formattedResponse = formattedResponse + "📖 *4. " + b4t + "*\n✍️ " + b4a + " | 📚 " + b4g + "\n⭐ " + b4r + "\n💡 " + b4w + "\n\n";
+			}
+			
+			// Parse Book 5
+			b5as = rawText.indexOf("BOOK5_AUTHOR:");
+			b5gs = rawText.indexOf("BOOK5_GENRE:");
+			b5ws = rawText.indexOf("BOOK5_WHY:");
+			b5rs = rawText.indexOf("BOOK5_RATING:");
+			
+			if(b5ts != -1 && b5as != -1)
+			{
+				b5t = rawText.substring(b5ts + 12,b5as).trim();
+				b5a = rawText.substring(b5as + 13,b5gs).trim();
+				b5g = rawText.substring(b5gs + 13,b5ws).trim();
+				b5w = rawText.substring(b5ws + 11,b5rs).trim();
+				b5r = rawText.substring(b5rs + 14).trim();
+				formattedResponse = formattedResponse + "📖 *5. " + b5t + "*\n✍️ " + b5a + " | 📚 " + b5g + "\n⭐ " + b5r + "\n💡 " + b5w + "\n\n";
+			}
+			
+			formattedResponse = formattedResponse + "📚 *Happy Reading!*";
+			
+			response = Map();
+			response.put("action","reply");
+			response.put("replies",{formattedResponse});
+			response.put("suggestions",{"👶 Age-Based Suggestions","🔍 Search Specific Book","🏠 Main Menu"});
+			return response;
+		}
+	}
+	catch (e)
+	{
+		info "Error fetching book recommendations: " + e;
+	}
+	
+	response = Map();
+	response.put("action","reply");
+	response.put("replies",{"❌ Error fetching book recommendations. Please try again!"});
+	response.put("suggestions",{"👶 Age-Based Suggestions","🏠 Main Menu"});
+	return response;
+}
+
+// ============================================
+// 📚 BOOK SEARCH - Entry Point
+// ============================================
+if(userMessage.equals("🔍 search specific book") || userMessage.equals("🔍 search another book"))
+{
+	response = Map();
+	response.put("action","reply");
+	response.put("replies",{"🔍 *Search for a Book*\n\n📝 Type the book name or author name:\n\n*Examples:*\n• The Alchemist\n• Chetan Bhagat\n• Atomic Habits\n• Harry Potter"});
+	response.put("suggestions",{"🏠 Main Menu"});
+	return response;
+}
+
+// ============================================
+// 🎭 EVENT DISCOVERY
+// ============================================
+if(userMessage.equals("2") || userMessage.equals("🎭 event discovery"))
+{
+	response = Map();
+	response.put("action","reply");
+	response.put("replies",{"🎭 *Event Discovery*\n\n📍 Find concerts, festivals, theater shows, sports events & more!\n\n*Type your city name:*\n• Chennai\n• Mumbai\n• Bangalore\n• Delhi\n• Or any other city in India"});
+	response.put("suggestions",{"🏠 Main Menu"});
+	return response;
+}
+
+// ============================================
+// 🧠 TRIVIA GAME - START
+// ============================================
+if(userMessage.equals("3") || userMessage.equals("🧠 trivia games"))
+{
+	response = Map();
+	response.put("action","reply");
+	response.put("replies",{"🧠 *Movie Trivia Challenge!*\n\n🎬 Test your South Indian cinema knowledge!\n\nChoose your difficulty level:"});
+	response.put("suggestions",{"😊 Easy","🤔 Medium","🧠 Hard","🏠 Main Menu"});
+	return response;
+}
+
+// ============================================
+// 🧠 TRIVIA GAME - Generate Questions
+// ============================================
+if(userMessage.equals("😊 easy") || userMessage.equals("🤔 medium") || userMessage.equals("🧠 hard"))
+{
+	difficulty = "";
+	difficultyName = "";
+	
+	if(userMessage.equals("😊 easy"))
+	{
+		difficulty = "easy";
+		difficultyName = "Easy";
+	}
+	else if(userMessage.equals("🤔 medium"))
+	{
+		difficulty = "medium";
+		difficultyName = "Medium";
+	}
+	else
+	{
+		difficulty = "hard";
+		difficultyName = "Hard";
+	}
+	
+	prompt = "Create 1 " + difficulty + " difficulty South Indian cinema trivia multiple choice question. Format EXACTLY:\nQUESTION: [question text]\nOPTION1: [option text]\nOPTION2: [option text]\nOPTION3: [option text]\nOPTION4: [option text]\nCORRECT: [1, 2, 3, or 4]";
+	
+	jsonPayload = "{\"contents\":[{\"parts\":[{\"text\":\"" + prompt + "\"}]}],\"generationConfig\":{\"maxOutputTokens\":500}}";
+	
+	headers = Map();
+	headers.put("Content-Type","application/json");
+	
+	try 
+	{
+		apiResponse = invokeurl
+		[
+			url :"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=AIzaSyBZFiRDhTUVwgB5GBxjWNCJ49_bnniz5tk"
+			type :POST
+			parameters:jsonPayload
+			headers:headers
+		];
+		
+		if(apiResponse != null && apiResponse.get("candidates") != null)
+		{
+			rawText = apiResponse.get("candidates").get(0).get("content").get("parts").get(0).get("text");
+			
+			// Parse question and options
+			qs = rawText.indexOf("QUESTION:");
+			o1s = rawText.indexOf("OPTION1:");
+			o2s = rawText.indexOf("OPTION2:");
+			o3s = rawText.indexOf("OPTION3:");
+			o4s = rawText.indexOf("OPTION4:");
+			cs = rawText.indexOf("CORRECT:");
+			
+			if(qs != -1 && o1s != -1 && cs != -1)
+			{
+				qt = rawText.substring(qs + 9,o1s).trim();
+				o1t = rawText.substring(o1s + 8,o2s).trim();
+				o2t = rawText.substring(o2s + 8,o3s).trim();
+				o3t = rawText.substring(o3s + 8,o4s).trim();
+				o4t = rawText.substring(o4s + 8,cs).trim();
+				ca = rawText.substring(cs + 8).trim();
+				
+				// Extract just the number from correct answer
+				if(ca.length() > 1)
+				{
+					ca = ca.substring(0,1);
+				}
+				
+				// Create button codes (letter + correctness)
+				// Format: a1 = option A correct, a2 = option A wrong
+				codeA = "a2";
+				codeB = "b2";
+				codeC = "c2";
+				codeD = "d2";
+				
+				if(ca.equals("1"))
+				{
+					codeA = "a1";
+				}
+				else if(ca.equals("2"))
+				{
+					codeB = "b1";
+				}
+				else if(ca.equals("3"))
+				{
+					codeC = "c1";
+				}
+				else if(ca.equals("4"))
+				{
+					codeD = "d1";
+				}
+				
+				response = Map();
+				response.put("action","reply");
+				response.put("replies",{"🎬 *" + difficultyName + " Trivia Question:*\n\n❓ " + qt + "\n\n💡 Choose your answer:"});
+				response.put("suggestions",{codeA + " - " + o1t,codeB + " - " + o2t,codeC + " - " + o3t,codeD + " - " + o4t});
+				return response;
+			}
+		}
+	}
+	catch (e)
+	{
+		info "Error generating trivia: " + e;
+	}
+	
+	response = Map();
+	response.put("action","reply");
+	response.put("replies",{"❌ Error loading trivia question. Please try again!"});
+	response.put("suggestions",{"😊 Easy","🤔 Medium","🧠 Hard","🏠 Main Menu"});
+	return response;
+}
+
+// ============================================
+// 🧠 TRIVIA GAME - Answer Validation (FIXED)
+// ============================================
+if(userMessage.equals("a1") || userMessage.equals("a2") || userMessage.equals("b1") || userMessage.equals("b2") || userMessage.equals("c1") || userMessage.equals("c2") || userMessage.equals("d1") || userMessage.equals("d2"))
+{
+	// Check if answer is correct (ends with "1") or wrong (ends with "2")
+	lastChar = userMessage.substring(1,2);
+	
+	if(lastChar.equals("1"))
+	{
+		response = Map();
+		response.put("action","reply");
+		response.put("replies",{"🎉 *CORRECT!* Amazing! 🎊\n\n🏆 You're a true cinema expert!\n\n🎬 Want to play again?"});
+		response.put("suggestions",{"😊 Easy","🤔 Medium","🧠 Hard","🏠 Main Menu"});
+		return response;
+	}
+	else
+	{
+		response = Map();
+		response.put("action","reply");
+		response.put("replies",{"❌ *Not quite right!*\n\n💡 Don't worry, better luck next time!\n\n🎬 Try another question?"});
+		response.put("suggestions",{"😊 Easy","🤔 Medium","🧠 Hard","🏠 Main Menu"});
+		return response;
+	}
+}
+
+// ============================================
+// END OF PART 3
+// ============================================
+
+// ============================================
+// 🎬 CINEMATE BOT - PART 4 (FINAL VERSION)
+// BOOK SEARCH + EVENT DISCOVERY + FALLBACK
+// ============================================
+
+
+// --------------------------------------------------
+// ALWAYS CHECK EVENT BUTTON FIRST
+// --------------------------------------------------
+isEventButton = false;
+if(userMessage.contains("event_category_selection|") || userMessage.contains("event_domain_selection|"))
+{
+    isEventButton = true;
+}
+
+
+// --------------------------------------------------
+// BOOK SEARCH DETECTION (ONLY IF NOT EVENT BUTTON)
+// --------------------------------------------------
+isBookSearch = false;
+
+if(isEventButton == false)
+{
+    bookKeywords = {
+        "book","author","novel","story","read","writer",
+        "harry","potter","alchemist","habits","sapiens",
+        "chetan","bhagat","tolkien","rowling","coelho"
+    };
+
+    for each word in bookKeywords
+    {
+        if(userMessage.toLowerCase().contains(word))
+        {
+            isBookSearch = true;
+        }
+    }
+
+    // Multi-word search → likely book/author
+    if(userMessage.contains(" ") && userMessage.length() > 4)
+    {
+        isBookSearch = true;
+    }
+}
+
+
+
+// --------------------------------------------------
+// 1. BOOK SEARCH ENTRY MENU
+// --------------------------------------------------
+if(userMessage.equals("🔍 search specific book") || userMessage.equals("🔍 search another book"))
+{
+    response = Map();
+    response.put("action","reply");
+    response.put("replies",{
+        "🔍 *Search for a Book*\n\n📝 Type the book name or author name:"
+    });
+    response.put("suggestions",{"🏠 Main Menu"});
+    return response;
+}
+
+
+
+// --------------------------------------------------
+// 2. PROCESS BOOK SEARCH (ONLY IF NOT EVENT BUTTON)
+// --------------------------------------------------
+if(isBookSearch == true && isEventButton == false)
+{
+    searchQuery = userMessage;
+
+    display = "";
+    if(searchQuery.length() > 0)
+    {
+        display = searchQuery.substring(0,1).toUpperCase() + searchQuery.substring(1);
+    }
+
+    prompt =
+        "Search for book or author: \"" + searchQuery +
+        "\". Provide Title, Author, Genre, Rating, 2-line summary, and why read. If not found, reply BOOK_NOT_FOUND.";
+
+    escaped = prompt.replaceAll("\\","\\\\")
+                    .replaceAll("\"","\\\"")
+                    .replaceAll("\n","\\n");
+
+    jsonPayload = "{\"contents\":[{\"parts\":[{\"text\":\"" + escaped + "\"}]}]}";
+
+    headers = Map();
+    headers.put("Content-Type","application/json");
+
+    try
+    {
+        apiResponse = invokeurl
+        [
+            url :"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=AIzaSyBZFiRDhTUVwgB5GBxjWNCJ49_bnniz5tk"
+            type :POST
+            parameters:jsonPayload
+            headers:headers
+        ];
+
+        raw = apiResponse.get("candidates").get(0).get("content").get("parts").get(0).get("text");
+
+        if(raw.toUpperCase().contains("BOOK_NOT_FOUND"))
+        {
+            response = Map();
+            response.put("action","reply");
+            response.put("replies",{"❌ No results for \"" + display + "\""});
+            response.put("suggestions",{"🔍 Search Another Book","🏠 Main Menu"});
+            return response;
+        }
+
+        response = Map();
+        response.put("action","reply");
+        response.put("replies",{"📚 *Book Information*\n\n" + raw});
+        response.put("suggestions",{"🔍 Search Another Book","🏠 Main Menu"});
+        return response;
+    }
+    catch(e)
+    {
+        info "Book Search Error: " + e;
+    }
+
+    response = Map();
+    response.put("action","reply");
+    response.put("replies",{"❌ Book search error. Try again."});
+    response.put("suggestions",{"🔍 Search Another Book","🏠 Main Menu"});
+    return response;
+}
+
+
+
+// --------------------------------------------------
+// 3. EVENT DISCOVERY ENTRY
+// --------------------------------------------------
+if(userMessage.equals("2") || userMessage.equals("🎭 event discovery"))
+{
+    response = Map();
+    response.put("action","reply");
+    response.put("replies",{"🎭 *Event Discovery*\n\n📍 Type your city name:"});
+    response.put("suggestions",{"🏠 Main Menu"});
+    return response;
+}
+
+
+
+// --------------------------------------------------
+// 4. CITY DETECTION (NOT book, NOT event button)
+// --------------------------------------------------
+knownCommands = {
+    "0","1","2","3","menu","hi","hello","hey","start","help",
+    "🎬 movie suggestions","📚 book suggestions","books",
+    "🎭 event discovery","🧠 trivia games","🏠 main menu",
+    "🔍 search specific book","🔍 search another book"
+};
+
+isKnown = false;
+for each c in knownCommands
+{
+    if(userMessage.equals(c))
+    {
+        isKnown = true;
+    }
+}
+
+if(isKnown == false && isBookSearch == false && isEventButton == false)
+{
+    isCity = true;
+
+    if(userMessage.matches(".*[0-9].*"))
+    {
+        isCity = false;
+    }
+
+    if(userMessage.length() < 3 || userMessage.length() > 20)
+    {
+        isCity = false;
+    }
+
+    if(isCity == true)
+    {
+        city = userMessage.substring(0,1).toUpperCase() + userMessage.substring(1).toLowerCase();
+
+        response = Map();
+        response.put("action","reply");
+        response.put("replies",{"🎭 *Event Discovery - " + city + "*\nSelect category:"});
+        response.put("suggestions",{
+            "event_category_selection|" + city + "|💻 Technical",
+            "event_category_selection|" + city + "|🎭 Non-Technical",
+            "🏠 Main Menu"
+        });
+        return response;
+    }
+}
+
+
+
+// --------------------------------------------------
+// 5. EVENT CATEGORY BUTTON
+// --------------------------------------------------
+if(userMessage.contains("event_category_selection|"))
+{
+    firstPipe = userMessage.indexOf("|");
+    rem1 = userMessage.substring(firstPipe + 1);
+
+    secondPipe = rem1.indexOf("|");
+    city = rem1.substring(0, secondPipe);
+    category = rem1.substring(secondPipe + 1);
+
+    // Technical
+    if(category.contains("💻"))
+    {
+        response = Map();
+        response.put("action","reply");
+        response.put("replies",{
+            "💻 *Technical Events - " + city + "*\nChoose domain:"
+        });
+        response.put("suggestions",{
+            "event_domain_selection|" + city + "|TECH|🚗 EV & Automotive",
+            "event_domain_selection|" + city + "|TECH|🤖 AI & Machine Learning",
+            "event_domain_selection|" + city + "|TECH|☁️ Cloud & DevOps",
+            "event_domain_selection|" + city + "|TECH|🔐 Cybersecurity",
+            "event_domain_selection|" + city + "|TECH|🎮 Gaming",
+            "🏠 Main Menu"
+        });
+        return response;
+    }
+
+    // Non technical
+    response = Map();
+    response.put("action","reply");
+    response.put("replies",{
+        "🎭 *Entertainment Events - " + city + "*\nChoose interest:"
+    });
+    response.put("suggestions",{
+        "event_domain_selection|" + city + "|NONTECH|🎵 Music",
+        "event_domain_selection|" + city + "|NONTECH|🎨 Art",
+        "event_domain_selection|" + city + "|NONTECH|🎉 Festivals",
+        "🏠 Main Menu"
+    });
+    return response;
+}
+
+
+
+// --------------------------------------------------
+// 6. EVENT DOMAIN BUTTON + STRUCTURED RESULTS
+// --------------------------------------------------
+if(userMessage.contains("event_domain_selection|"))
+{
+    // Parse
+    p1 = userMessage.indexOf("|");
+    r1 = userMessage.substring(p1 + 1);
+
+    p2 = r1.indexOf("|");
+    city = r1.substring(0, p2);
+
+    r2 = r1.substring(p2 + 1);
+    p3 = r2.indexOf("|");
+
+    category = r2.substring(0, p3);
+    domainEmoji = r2.substring(p3 + 1);
+
+    domain = domainEmoji;
+    if(domainEmoji.contains(" "))
+    {
+        s = domainEmoji.indexOf(" ");
+        domain = domainEmoji.substring(s + 1);
+    }
+
+    // STRICT PROMPT
+    prompt =
+        "Return ONLY 3 events in STRICT STRUCTURED FORMAT.\n" +
+        "No extra text. No disclaimers. No explanations.\n\n" +
+
+        "EVENT1_NAME: [name]\n" +
+        "EVENT1_VENUE: [venue]\n" +
+        "EVENT1_DATE: [date]\n" +
+        "EVENT1_DESC: [short description]\n" +
+        "EVENT1_LINK: [URL or NA]\n\n" +
+
+        "EVENT2_NAME: [name]\n" +
+        "EVENT2_VENUE: [venue]\n" +
+        "EVENT2_DATE: [date]\n" +
+        "EVENT2_DESC: [short description]\n" +
+        "EVENT2_LINK: [URL or NA]\n\n" +
+
+        "EVENT3_NAME: [name]\n" +
+        "EVENT3_VENUE: [venue]\n" +
+        "EVENT3_DATE: [date]\n" +
+        "EVENT3_DESC: [short description]\n" +
+        "EVENT3_LINK: [URL or NA]\n\n" +
+
+        "City: " + city + "\n" +
+        "Domain: " + domain;
+
+    escaped = prompt.replaceAll("\\","\\\\")
+                    .replaceAll("\"","\\\"")
+                    .replaceAll("\n","\\n");
+
+    jsonPayload = "{\"contents\":[{\"parts\":[{\"text\":\"" + escaped + "\"}]}]}";
+
+    headers = Map();
+    headers.put("Content-Type","application/json");
+
+    try
+    {
+        apiResponse = invokeurl
+        [
+            url :"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=AIzaSyBZFiRDhTUVwgB5GBxjWNCJ49_bnniz5tk"
+            type :POST
+            parameters:jsonPayload
+            headers:headers
+        ];
+
+        rawText = apiResponse.get("candidates").get(0).get("content")
+                              .get("parts").get(0).get("text");
+
+        // -------------------------
+        // FORMAT EVENT OUTPUT
+        // -------------------------
+
+        formatted = "🎭 *" + domain + " Events in " + city + "*\n\n";
+
+        // EVENT 1
+        e1n = rawText.indexOf("EVENT1_NAME:");
+        e1v = rawText.indexOf("EVENT1_VENUE:");
+        e1d = rawText.indexOf("EVENT1_DATE:");
+        e1desc = rawText.indexOf("EVENT1_DESC:");
+        e1link = rawText.indexOf("EVENT1_LINK:");
+        e2n = rawText.indexOf("EVENT2_NAME:");
+
+        if(e1n != -1)
+        {
+            name1 = rawText.substring(e1n + 13, e1v).trim();
+            venue1 = rawText.substring(e1v + 14, e1d).trim();
+            date1 = rawText.substring(e1d + 13, e1desc).trim();
+
+            desc1 = rawText.substring(e1desc + 12, e1link).trim();
+
+            if(e2n != -1)
+            {
+                link1 = rawText.substring(e1link + 12, e2n).trim();
+            }
+            else
+            {
+                link1 = rawText.substring(e1link + 12).trim();
+            }
+
+            formatted = formatted +
+                "🎪 *1. " + name1 + "*\n" +
+                "📍 " + venue1 + "\n" +
+                "📅 " + date1 + "\n" +
+                "💬 " + desc1 + "\n" +
+                "🔗 " + link1 + "\n\n";
+        }
+
+        // EVENT 2
+        e2v = rawText.indexOf("EVENT2_VENUE:");
+        e2d = rawText.indexOf("EVENT2_DATE:");
+        e2desc = rawText.indexOf("EVENT2_DESC:");
+        e2link = rawText.indexOf("EVENT2_LINK:");
+        e3n = rawText.indexOf("EVENT3_NAME:");
+
+        if(e2n != -1)
+        {
+            name2 = rawText.substring(e2n + 13, e2v).trim();
+            venue2 = rawText.substring(e2v + 14, e2d).trim();
+            date2 = rawText.substring(e2d + 13, e2desc).trim();
+            desc2 = rawText.substring(e2desc + 12, e2link).trim();
+
+            if(e3n != -1)
+            {
+                link2 = rawText.substring(e2link + 12, e3n).trim();
+            }
+            else
+            {
+                link2 = rawText.substring(e2link + 12).trim();
+            }
+
+            formatted = formatted +
+                "🎪 *2. " + name2 + "*\n" +
+                "📍 " + venue2 + "\n" +
+                "📅 " + date2 + "\n" +
+                "💬 " + desc2 + "\n" +
+                "🔗 " + link2 + "\n\n";
+        }
+
+        // EVENT 3
+        e3v = rawText.indexOf("EVENT3_VENUE:");
+        e3d = rawText.indexOf("EVENT3_DATE:");
+        e3desc = rawText.indexOf("EVENT3_DESC:");
+        e3link = rawText.indexOf("EVENT3_LINK:");
+
+        if(e3n != -1)
+        {
+            name3 = rawText.substring(e3n + 13, e3v).trim();
+            venue3 = rawText.substring(e3v + 14, e3d).trim();
+            date3 = rawText.substring(e3d + 13, e3desc).trim();
+            desc3 = rawText.substring(e3desc + 12, e3link).trim();
+            link3 = rawText.substring(e3link + 12).trim();
+
+            formatted = formatted +
+                "🎪 *3. " + name3 + "*\n" +
+                "📍 " + venue3 + "\n" +
+                "📅 " + date3 + "\n" +
+                "💬 " + desc3 + "\n" +
+                "🔗 " + link3 + "\n\n";
+        }
+
+        formatted = formatted + "🎉 *Enjoy the events!*";
+
+        response = Map();
+        response.put("action","reply");
+        response.put("replies",{formatted});
+        response.put("suggestions",{"🎭 Event Discovery","🏠 Main Menu"});
+        return response;
+    }
+    catch(e)
+    {
+        info "Event Error: " + e;
+    }
+
+    response = Map();
+    response.put("action","reply");
+    response.put("replies",{"❌ Event error. Try again."});
+    response.put("suggestions",{"🎭 Event Discovery","🏠 Main Menu"});
+    return response;
+}
+
+
+
+// --------------------------------------------------
+// 7. FALLBACK
+// --------------------------------------------------
+response = Map();
+response.put("action","reply");
+response.put("replies",{
+    "❓ I didn't understand.\nTry typing:\n• A city name\n• A book/author\n• Or use menu"
+});
+response.put("suggestions",{
+    "🎬 Movie Suggestions","📚 Book Suggestions","🎭 Event Discovery","🧠 Trivia Games","🏠 Main Menu"
+});
+return response;
+
